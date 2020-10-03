@@ -1,0 +1,20 @@
+@@ -24,6 +24,7 @@ APP:= deepstream-app
+ 
+ TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
+ 
++CUDA_VER:=10.0
+ NVDS_VERSION:=4.0
+ 
+ LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
+@@ -41,10 +42,10 @@ PKGS:= gstreamer-1.0 gstreamer-video-1.0 x11
+ 
+ OBJS:= $(SRCS:.c=.o)
+ 
+-CFLAGS+= -I../../apps-common/includes -I../../../includes -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=4
++CFLAGS+= -I../../apps-common/includes -I../../../includes -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=4 -I /usr/local/cuda-$(CUDA_VER)/include
+ 
+ LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -lnvds_utils -lm \
+-       -lgstrtspserver-1.0 -lgstrtp-1.0 -Wl,-rpath,$(LIB_INSTALL_DIR)
++       -lgstrtspserver-1.0 -lgstrtp-1.0 -Wl,-rpath,$(LIB_INSTALL_DIR) -lnvbufsurface -lnvbufsurftransform
+ 
+ CFLAGS+= `pkg-config --cflags $(PKGS)`

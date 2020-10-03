@@ -1,0 +1,91 @@
+@@ -22,6 +22,8 @@
+ 
+ #include <string.h>
+ 
++#include "nvbufsurface.h"
++#include "nvbufsurftransform.h"
+ #include "gstnvdsmeta.h"
+ #include "deepstream_common.h"
+ #include "deepstream_sources.h"
+@@ -62,6 +64,64 @@ set_camera_v4l2_params (NvDsSourceConfig * config, NvDsSrcBin * bin)
+   return TRUE;
+ }
+ 
++static GstPadProbeReturn
++nvargus_src_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
++    gpointer u_data)
++{
++    GstBuffer *buf = (GstBuffer *) info->data;
++    GstMapInfo outmap = GST_MAP_INFO_INIT;
++    gst_buffer_map (buf, &outmap, GST_MAP_WRITE);
++    NvBufSurface*  surface = (NvBufSurface *)outmap.data;
++
++    NvBufSurfTransformRect src_rect, dst_rect;
++    src_rect.top   = 0;
++    src_rect.left  = 0;
++    src_rect.width = (guint) surface->surfaceList[0].width;
++    src_rect.height= (guint) surface->surfaceList[0].height;
++
++    dst_rect.top   = 0;
++    dst_rect.left  = 0;
++    dst_rect.width = (guint) surface->surfaceList[0].width;
++    dst_rect.height= (guint) surface->surfaceList[0].height;
++
++    NvBufSurface *dst_surface = NULL;
++    NvBufSurfaceCreateParams nvbufsurface_create_params;
++
++    nvbufsurface_create_params.gpuId  = surface->gpuId;
++    nvbufsurface_create_params.width  = (gint) surface->surfaceList[0].width;
++    nvbufsurface_create_params.height = (gint) surface->surfaceList[0].height;
++    nvbufsurface_create_params.size = 0;
++    nvbufsurface_create_params.colorFormat = surface->surfaceList[0].colorFormat;
++    nvbufsurface_create_params.layout = surface->surfaceList[0].layout;
++    nvbufsurface_create_params.memType = surface->memType;
++
++    NvBufSurfaceCreate(&dst_surface,1,&nvbufsurface_create_params);
++
++    NvBufSurfTransformParams nvbufsurface_params;
++    nvbufsurface_params.src_rect = &src_rect;
++    nvbufsurface_params.dst_rect = &dst_rect;
++    nvbufsurface_params.transform_flag =  0;
++    nvbufsurface_params.transform_filter = NvBufSurfTransformInter_Default;
++
++    NvBufSurfTransformConfigParams transform_config_params;
++    NvBufSurfTransform_Error err;
++
++    transform_config_params.compute_mode = NvBufSurfTransformCompute_Default;
++    transform_config_params.gpu_id = surface->gpuId;
++    transform_config_params.cuda_stream = NULL;
++    err = NvBufSurfTransformSetSessionParams (&transform_config_params);
++    // copy to dst_surface
++    err = NvBufSurfTransform (surface, dst_surface, &nvbufsurface_params);
++    // rototate 180 degree to original surface
++    nvbufsurface_params.transform_flag =  NVBUFSURF_TRANSFORM_FLIP;
++    nvbufsurface_params.transform_flip = NvBufSurfTransform_Rotate180;
++    err = NvBufSurfTransform (dst_surface, surface, &nvbufsurface_params);
++    NvBufSurfaceDestroy(dst_surface);
++
++    gst_buffer_unmap (buf, &outmap);
++    return GST_PAD_PROBE_OK;
++}
++
+ static gboolean
+ create_camera_source_bin (NvDsSourceConfig * config, NvDsSrcBin * bin)
+ {
+@@ -144,12 +204,16 @@ create_camera_source_bin (NvDsSourceConfig * config, NvDsSrcBin * bin)
+     NVGSTDS_BIN_ADD_GHOST_PAD (bin->bin, bin->cap_filter, "src");
+ 
+   } else {
++    GstPad *src_pad;
+ 
+     g_object_set (G_OBJECT (bin->cap_filter), "caps", caps, NULL);
+ 
+     gst_bin_add_many (GST_BIN (bin->bin), bin->src_elem, bin->cap_filter, NULL);
+ 
+     NVGSTDS_LINK_ELEMENT (bin->src_elem, bin->cap_filter);
++    src_pad = gst_element_get_static_pad (bin->src_elem, "src");
++    gst_pad_add_probe (src_pad, GST_PAD_PROBE_TYPE_BUFFER,
++        nvargus_src_pad_buffer_probe, NULL, NULL);
+ 
+     NVGSTDS_BIN_ADD_GHOST_PAD (bin->bin, bin->cap_filter, "src");
+   }
