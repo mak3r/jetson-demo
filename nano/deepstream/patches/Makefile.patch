@@ -1,20 +1,23 @@
-@@ -24,6 +24,7 @@ APP:= deepstream-app
+--- /home/mark/dev/config/Makefile	2020-10-05 14:40:37.486841591 -0400
++++ /opt/nvidia/deepstream/deepstream-5.0/sources/apps/sample_apps/deepstream-app/Makefile	2020-07-27 04:19:21.000000000 -0400
+@@ -24,7 +24,6 @@
  
  TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
  
-+CUDA_VER:=10.0
- NVDS_VERSION:=4.0
+-CUDA_VER:=10.0
+ NVDS_VERSION:=5.0
  
  LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
-@@ -41,10 +42,10 @@ PKGS:= gstreamer-1.0 gstreamer-video-1.0 x11
+@@ -43,10 +42,10 @@
  
  OBJS:= $(SRCS:.c=.o)
  
--CFLAGS+= -I../../apps-common/includes -I../../../includes -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=4
-+CFLAGS+= -I../../apps-common/includes -I../../../includes -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=4 -I /usr/local/cuda-$(CUDA_VER)/include
+-CFLAGS+= -I./ -I../../apps-common/includes -I../../../includes -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=5 -I /usr/local/cuda-$(CUDA_VER)/include
++CFLAGS+= -I./ -I../../apps-common/includes -I../../../includes -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=5
  
- LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -lnvds_utils -lm \
--       -lgstrtspserver-1.0 -lgstrtp-1.0 -Wl,-rpath,$(LIB_INSTALL_DIR)
-+       -lgstrtspserver-1.0 -lgstrtp-1.0 -Wl,-rpath,$(LIB_INSTALL_DIR) -lnvbufsurface -lnvbufsurftransform
+ LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -lnvdsgst_smartrecord -lnvds_utils -lnvds_msgbroker -lm \
+-       -lgstrtspserver-1.0 -ldl -Wl,-rpath,$(LIB_INSTALL_DIR) -lnvbufsurface -lnvbufsurftransform
++       -lgstrtspserver-1.0 -ldl -Wl,-rpath,$(LIB_INSTALL_DIR)
  
  CFLAGS+= `pkg-config --cflags $(PKGS)`
+ 
