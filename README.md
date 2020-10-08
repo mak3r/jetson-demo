@@ -12,7 +12,7 @@ Various demos of kubernetes with the NVIDIA jetson family of SBC
 
 ## Configure sources and sinks and other deepstream settings
 * https://docs.nvidia.com/metropolis/deepstream/dev-guide/index.html#page/DeepStream_Development_Guide/deepstream_app_config.3.2.html#
-* [sample config](./nano/config)
+* [sample configs](./nano/config)
 
 ## Patch the deepstream src app to enable camera rotation
 * [forum solution](https://forums.developer.nvidia.com/t/jetson-nano-csi-raspberry-pi-camera-v2-upside-down-video-when-run-an-example-with-deepstream-app/82077/6) 
